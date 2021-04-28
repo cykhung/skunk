@@ -15,7 +15,7 @@ function varargout = ckhsigpsd(varargin)
 %               Use PSD to calculate average power:
 %               >> [~, avg_pwr_dB_time] = ckhsigpkavg(x);
 %               >> X = ckhsigpsd(x, '', 8192, 'Hz', kaiser(8192, 19), 'none');
-%               >> avg_pwr_dB_freq = 10*log10(sum(X.psd / length(X.psd)));
+%               >> avg_pwr_dB_freq = 10*log10(sum(X.psd * X.fs / length(X.psd)))
 %
 %        INPUT: - x (N-D array of struct)
 %                   Signal structure(s). x.s must not be [].
@@ -153,6 +153,10 @@ if ~isfield(options, 'win') || isempty(options.win)
             if strcmp(x(n).type, 'circular')
                 options.win{n} = getkaiser(19, 8192);
             else
+                if length(x(n).s) == 1
+                    error(['Signal has only one sample. ', ...
+                           'Not supported by Kaiser window.']);
+                end
                 options.win{n} = getkaiser(19, length(x(n).s));
             end
         end
@@ -219,7 +223,8 @@ X.fs  = zeros(1, numel(x));
 
 %% Calculate PSD.
 for n = 1:numel(x)
-    [PSD, f]    = psd_1(x(n).s, options.fftlen, options.win{n}, options.norm);
+    [PSD, f]    = psd_1(x(n).s, x(n).fs, options.fftlen, options.win{n}, ...
+                        options.norm);
     X.psd(:, n) = PSD(:);
     X.f(:, n)   = f(:) * x(n).fs;
     X.fs(n)     = x(n).fs;
@@ -240,12 +245,15 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%       Syntax: [PSD, f] = psd_1(s, fft_len, win, norm_type);
+%       Syntax: [PSD, f] = psd_1(s, fs, fft_len, win, norm_type);
 % 
 %  Description: Calculate PSD of one signal vector using Matlab function psd().
 %
 %        Input: - s (1-D row/col array of complex double)
 %                   Vector of samples
+%
+%               - fs (real double)
+%                   Sampling rate in Hz.
 %
 %               - fft_len (real double)
 %                   FFT length.
@@ -268,7 +276,7 @@ end
 %                   Vector of normalized frequencies (real). Same dimension as 
 %                   vector s.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [PSD, f] = psd_1(s, fft_len, win, norm_type)
+function [PSD, f] = psd_1(s, fs, fft_len, win, norm_type)
 
 
 %% Force s and win to be column vectors.
@@ -278,7 +286,7 @@ win = win(:);
 
 %% Calculate KMU (from Matlab PSD).
 k   = fix(length(s) / length(win));
-KMU = k * (norm(win) ^ 2);
+KMU = k * (norm(win) ^ 2) * fs;
 
 
 %% Calculate PSD.
@@ -400,13 +408,13 @@ else
     hold off
 end
 xlabel(xlabelstr);
-ylabel('PSD (dB)');
+ylabel('PSD (dB/Hz)');
 title_str = sprintf('Power Spectral Density. WIN =');
 tmp = cell(size(win));
 for n = 1:numel(win)
     tmp{n} = num2str(length(win{n}));
 end
-tmp = unique(tmp);
+tmp = unique(tmp, 'stable');
 if numel(tmp) == 1
     title_str = sprintf('%s %s.', title_str, tmp{1});
 else

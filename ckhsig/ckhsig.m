@@ -102,6 +102,43 @@ case 1
         x.s = in1;
         if ~isempty(x.s)
             x.s = x.s(:).';
+        end        
+    elseif isa(in1, 'timetable')
+        % Undocumented feature.
+        % Single timetable (but possibly multiple signals).
+        n0 = seconds(in1.Properties.StartTime) * in1.Properties.SampleRate;
+        if abs(n0 - fix(n0)) > 0
+            error('Start index is not an integer.');
+        end
+        x = repmat(struct, [1, size(in1,2)]);
+        for n = 1:numel(x)
+            x(n).type = 'segment';
+            x(n).s    = in1{:,n};
+            x(n).s    = x(n).s(:).';
+            x(n).fs   = in1.Properties.SampleRate;
+            x(n).idx  = [0, length(x(n).s)-1] + n0;
+        end
+    elseif iscell(in1) && isa(in1{1}, 'timetable')
+        % Undocumented feature.
+        % Cell array of timetables.
+        x = repmat(struct, size(in1));
+        for n = 1:numel(in1)
+            if ~isa(in1{n}, 'timetable')
+               error('Only support timetable.'); 
+            end
+            if size(in1{n},2) ~= 1
+                error('Only support single signal.');
+            end
+            n0 = seconds(in1{n}.Properties.StartTime) * ...
+                                                in1{n}.Properties.SampleRate;
+            if abs(n0 - fix(n0)) > 0
+                error('Start index is not an integer.');
+            end
+            x(n).type = 'segment';
+            x(n).s    = in1{n}{:,1};
+            x(n).s    = x(n).s(:).';
+            x(n).fs   = in1{n}.Properties.SampleRate;
+            x(n).idx  = [0, length(x(n).s)-1] + n0;
         end
     end
 case 2

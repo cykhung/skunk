@@ -48,11 +48,14 @@ end
 
 %% Test: D = 3.45. Ntaps = [NaN 101 NaN]. For all 3 signal types. 
 Ntaps          = 101;
-D              = 0.45;
+D              = 3.45 - fix(3.45);  % 0.45; very tiny difference.
 mode           = 1;
 fs             = 1;
-idx            = [];
-h              = ckhfir('lagrangefd', Ntaps, D, mode, fs, idx);
+% idx            = [];
+% h              = ckhfir('lagrangefd', Ntaps, D, mode, fs, idx);
+[h, i0]        = designFracDelayFIR(D, Ntaps);
+h              = ckhfir(h, fs, 0:(length(h)-1), mode);
+h.idx          = h.idx - i0;
 rng(0, 'twister');
 x              = ckhsig;
 x(1)           = ckhsig(rand(1,1000), 1, 'segment', [1 1000]);
@@ -87,11 +90,14 @@ end
 
 %% Test: D = -3.29. Ntaps = [101 NaN NaN]. For all 3 signal types. 
 Ntaps          = 101;
-D              = -0.29;
+D              = -3.29 - fix(-3.29) + 1;
 mode           = 1;
 fs             = 10;
-idx            = [];
-h              = ckhfir('lagrangefd', Ntaps, D, mode, fs, idx);
+% idx            = [];
+% h              = ckhfir('lagrangefd', Ntaps, D, mode, fs, idx);
+[h, i0]        = designFracDelayFIR(D, Ntaps);
+h              = ckhfir(h, fs, 0:(length(h)-1), mode);
+h.idx          = h.idx - i0 - 1;
 rng(0, 'twister');
 x              = ckhsig;
 x(1)           = ckhsig(rand(1,1000), 10, 'segment', [1 1000]);
@@ -111,11 +117,12 @@ end
 
 %% Test: D = -3.29. Ntaps = 51. For all 3 signal types. 
 Ntaps          = 51;
-D              = -0.29;
+D              = -3.29 - fix(-3.29) + 1;
 mode           = 1;
 fs             = 10;
-idx            = [];
-h              = ckhfir('lagrangefd', Ntaps, D, mode, fs, idx);
+[h, i0]        = designFracDelayFIR(D, Ntaps);
+h              = ckhfir(h, fs, 0:(length(h)-1), mode);
+h.idx          = h.idx - i0 - 1;
 rng(0, 'twister');
 x              = ckhsig;
 x(1)           = ckhsig(rand(1,1000), 10, 'segment', [1 1000]);

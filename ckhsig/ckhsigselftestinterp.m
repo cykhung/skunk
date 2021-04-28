@@ -272,5 +272,25 @@ try                                         %#ok<TRYNC>
 end
 
 
+%% Test: Check with ideal complex exponential.
+fs = 20;
+t  = (0:1e4)/fs;
+fc = 4.3;
+x  = exp(1i*2*pi*fc*t);
+x  = ckhsig(x, fs);
+y  = ckhsiginterp(x, 2);
+
+fs = 40;
+t  = (y.idx(1):y.idx(2))/fs;
+z  = exp(1i*2*pi*fc*t);
+z  = ckhsig(z, fs, 'segment', y.idx);   % Ideal signal.
+
+if max(abs(y.s - z.s)) > 4.5e-4
+    status = 0;
+end
+
+
+
+
 end
 

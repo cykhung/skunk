@@ -24,7 +24,7 @@ x.fs      = 10;
 fftlen    = 5;
 win       = ones(1,fftlen);
 X         = ckhsigpsd(x, '', fftlen, '', win, '');
-ideal_psd = [0 0 0 0 5]';
+ideal_psd = [0 0 0 0 5]' / x.fs;
 ideal_f   = [-4 -2 0 2 4]';
 if (max(abs(X.psd - ideal_psd))   > 1e-15) || ...
    (max(abs(X.f - ideal_f)) > 1e-15)
@@ -39,7 +39,7 @@ x.fs      = 10;
 fftlen    = 4;
 win       = ones(1,fftlen);
 X         = ckhsigpsd(x, '', fftlen, '', win, '');
-ideal_psd = [4 0 0 0]';
+ideal_psd = [4 0 0 0]' / x.fs;
 ideal_f   = [-5 -2.5 0 2.5]';
 if (max(abs(X.psd - ideal_psd))   > 1e-15) || ...
    (max(abs(X.f - ideal_f)) > 1e-15)
@@ -54,7 +54,7 @@ x.fs      = 10;
 fftlen    = 5;
 win       = ones(1,fftlen);
 X         = ckhsigpsd(x, '', fftlen, '', win, '');
-ideal_psd = [0 5 0 0 0]';
+ideal_psd = [0 5 0 0 0]' / x.fs;
 ideal_f   = [-4 -2 0 2 4]';
 if (max(abs(X.psd - ideal_psd))   > 1e-15) || ...
    (max(abs(X.f - ideal_f)) > 1e-15)
@@ -69,7 +69,7 @@ x.fs      = 10;
 fftlen    = 4;
 win       = ones(1,fftlen);
 X         = ckhsigpsd(x, '', fftlen, '', win, '');
-ideal_psd = [0 4 0 0]';
+ideal_psd = [0 4 0 0]' / x.fs;
 ideal_f   = [-5 -2.5 0 2.5]';
 if (max(abs(X.psd - ideal_psd))   > 1e-15) || ...
    (max(abs(X.f - ideal_f)) > 1e-15)
@@ -84,7 +84,7 @@ x.fs      = 10;
 fftlen    = 5;
 win       = ones(1,fftlen);
 X         = ckhsigpsd(x, '', fftlen, '', win, '');
-ideal_psd = [5/4 0 0 0 5/4]';
+ideal_psd = [5/4 0 0 0 5/4]' / x.fs;
 ideal_f   = (-2:2)'/5*10;
 if (max(abs(X.psd - ideal_psd))   > 1e-15) || ...
    (max(abs(X.f - ideal_f)) > 1e-15)
@@ -99,7 +99,7 @@ x.fs      = 10;
 fftlen    = 6;
 win       = ones(1,fftlen);
 X         = ckhsigpsd(x, '', fftlen, '', win, '');
-ideal_psd = [0 1.5 0 0 0 1.5]';
+ideal_psd = [0 1.5 0 0 0 1.5]' / x.fs;
 ideal_f   = (-3:2)'/6*10;
 if (max(abs(X.psd - ideal_psd))   > 1e-15) || ...
    (max(abs(X.f - ideal_f)) > 1e-15)
@@ -127,7 +127,7 @@ x         = ckhsig([], 1, 'segment', []);
 x.s       = cos(2*pi*(2/6)*(0:5));
 x.fs      = 10;
 X         = ckhsigpsd(x, '', 6, 'Hz', ones(1,6), '');
-ideal_psd = [0 1.5 0 0 0 1.5]';
+ideal_psd = [0 1.5 0 0 0 1.5]' / x.fs;
 ideal_f   = (-3:2)'/6*10;
 if (max(abs(X.psd - ideal_psd))   > 1e-15) || ...
    (max(abs(X.f - ideal_f)) > 1e-15)
@@ -187,7 +187,7 @@ win       = getkaiser(19, fftlen);
 X         = ckhsigpsd(x, '', fftlen, '', win, '');
 Nblocks   = 1;
 w         = getkaiser(19, 256);
-KMU       = Nblocks * (norm(w) ^ 2);
+KMU       = Nblocks * (norm(w) ^ 2) * x.fs;
 ideal_PSD = abs(fftshift(fft( w .* x.s(1:256) ))) .^ 2;
 ideal_PSD = ideal_PSD * (1/KMU);
 if max(abs(ideal_PSD(:) - X.psd)) > 0
@@ -202,7 +202,7 @@ win       = getkaiser(19, fftlen);
 X         = ckhsigpsd(x, '', fftlen, '', win, '');
 Nblocks   = 2;
 w         = getkaiser(19, 256);
-KMU       = Nblocks * (norm(w) ^ 2);
+KMU       = Nblocks * (norm(w) ^ 2) * x.fs;
 ideal_PSD = abs(fftshift(fft( w .* x.s(1:256) )))   .^ 2 + ...
             abs(fftshift(fft( w .* x.s(257:512) ))) .^ 2;
 ideal_PSD = ideal_PSD * (1/KMU);
@@ -220,7 +220,7 @@ win       = getkaiser(19, 200);
 X         = ckhsigpsd(x, '', fftlen, '', win, '');
 Nblocks   = 1;
 w         = getkaiser(19, 200);
-KMU       = Nblocks * (norm(w) ^ 2);
+KMU       = Nblocks * (norm(w) ^ 2) * x.fs;
 ideal_PSD = abs(fftshift(fft( w .* x.s(1:200), 256 ))) .^ 2;
 ideal_PSD = ideal_PSD * (1/KMU);
 if max(abs(ideal_PSD(:) - X.psd)) > 0
@@ -235,7 +235,7 @@ win       = getkaiser(19, 200);
 X         = ckhsigpsd(x, '', fftlen, '', win, '');
 Nblocks   = 2;
 w         = getkaiser(19, 200);
-KMU       = Nblocks*norm(w)^2;
+KMU       = Nblocks * norm(w)^2 * x.fs;
 ideal_PSD = abs(fftshift(fft( w .* x.s(1:200), 256 )))   .^ 2 + ...
             abs(fftshift(fft( w .* x.s(201:400), 256 ))) .^ 2;
 ideal_PSD = ideal_PSD * (1/KMU);

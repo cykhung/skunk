@@ -108,10 +108,20 @@ if D_fractional == 0
     end
     h = ckhfir(1, x.fs, D, 1);
 else
-    h         = ckhfir('lagrangefd', Ntaps, D_fractional, 1, x.fs, []);
-    h         = ckhfirsetidx(h);
+    % % Lagrange.
+    % h         = ckhfir('lagrangefd', Ntaps, D_fractional, 1, x.fs, []);
+    % h         = ckhfirsetidx(h);
+    % D_integer = D - D_fractional;
+    % h.idx     = h.idx + D_integer;
+    
+    % designFracDelayFIR
+    if D_fractional < 0
+        D_fractional = D_fractional + 1;
+    end
+    [h, i0]   = designFracDelayFIR(D_fractional, Ntaps);
+    h         = ckhfir(h, x.fs, 0:(length(h)-1), 1);
     D_integer = D - D_fractional;
-    h.idx     = h.idx + D_integer;
+    h.idx     = h.idx - i0 + D_integer;
 end
 
 
