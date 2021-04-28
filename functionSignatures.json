@@ -1,0 +1,23 @@
+{
+"ls":
+{
+  "inputs":
+  [
+    {"name":"filename", "kind":"required", "type":[["filepath"], ["folderpath"], "char"], "multiplicity":"append"}
+  ]
+},
+"ll":
+{
+  "inputs":
+  [
+    {"name":"filename", "kind":"required", "type":[["filepath"], ["folderpath"], "char"], "multiplicity":"append"}
+  ]
+},
+"rm":
+{
+  "inputs":
+  [
+    {"name":"filename", "kind":"required", "type":[["filepath"], ["folderpath"], "char"], "multiplicity":"append"}
+  ]
+}
+}
