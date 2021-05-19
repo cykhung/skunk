@@ -1,165 +1,94 @@
-function T = ll(varargin)
-
-%%
-%       SYNTAX: T = ll;
-%               T = ll(files);
-%               T = ll(rootdir, includedir, excludedir, includefile, excludefile);
-%
-%  DESCRIPTION: Search files recursively.
-%
-%        INPUT: - files (char)
-%                   File pattern. Examples: *
-%                                           *.m
-%                                           files\*
-%                                           lib\files\*
-%
-%       OUTPUT: - T (table)
-%                   Table. See output T in searchfile.m for more details.
+function T = ll(x)
 
 
-%% Assign input arguments.
-switch nargin
-case 0
-    rootdir     = pwd;
-    includedir  = '*';
-    excludedir  = '';
-    includefile = '*';
-    excludefile = '';
-case 1
-    [rootdir, includedir, excludedir, includefile, excludefile] = ...
-        parseinput(varargin{1});
-case 5
-    [rootdir, includedir, excludedir, includefile, excludefile] = ...
-        deal(varargin{:});
+%% Use MATALB DIR to find files.
+s         = dir(x);
+T         = table;
+T.name    = {s.name}';
+T.folder  = {s.folder}';
+T.date    = {s.date}';
+T.bytes   = [s.bytes]';
+T.isdir   = [s.isdir]';
+T.datenum = [s.datenum]';
+
+
+%% If no file is found, then we are done.
+if isempty(T)
+    return;     % Early exit.
 end
 
 
-%% Make sure that drive letter is lowercase.
-if (length(rootdir) >= 2) && strcmp(rootdir(2), ':')
-    rootdir(1) = lower(rootdir(1));
-end
+%% Remove folders in the listing.
+T = T(T.isdir == false, :);
 
 
-%% Search.
-% fprintf('rootdir     = ''%s''\n', rootdir)
-% fprintf('includedir  = ''%s''\n', includedir)
-% fprintf('excludedir  = ''%s''\n', excludedir)
-% fprintf('includefile = ''%s''\n', includefile)
-% fprintf('excludefile = ''%s''\n', excludefile)
-% fprintf('\n')
-T = searchfile(rootdir, includedir, excludedir, includefile, excludefile);
+%% Set T.filename.
+x          = [T.folder, repmat({filesep}, size(T,1), 1), T.name];
+x          = join(x, '');
+T.filename = categorical(x);
 
 
-end
+%% Set T.date.
+T.date = datetime(T.datenum,                   ...
+                  'ConvertFrom', 'datenum',    ...
+                  'Format', 'dd-MMM-uuuu eee hh:mm:ss a');
 
 
-function [rootdir, includedir, excludedir, includefile, excludefile] = ...
-    parseinput(x)
-
-
-%% Case 1:
-%
-% * Examples: >> ll foo.m
-%             >> ll foo*
-%
-[filepath, name, ext] = fileparts(x);
-if isempty(filepath) && (exist([name, ext], 'dir') ~= 7)
-    rootdir     = pwd;
-    includedir  = '*';
-    excludedir  = '';
-    includefile = [name, ext];
-    excludefile = '';
-    return
-end
-
-
-%% Case 2:
-%
-% * Examples: >> ll files     where files is a folder.
-%             >> ll abc.def   where abc.def is a folder.
-%
-[filepath, name, ext] = fileparts(x);
-if isempty(filepath) && (exist([name, ext], 'dir') == 7)
-    error('Not supported.');
-    % rootdir     = pwd;
-    % includedir  = [name, ext];
-    % excludedir  = '';
-    % includefile = '*';
-    % excludefile = '';
-    % return
-end
-
-
-%% Case 3:
-%
-% * Examples: >> ll lib\files   where lib\files is a folder.
-%
-[filepath, name, ext] = fileparts(x);   %#ok<ASGLU>
-if ~isempty(filepath) && (exist(x, 'dir') == 7)
-    error('Not supported.');
-    % rootdir     = x;
-    % includedir  = '*';
-    % excludedir  = '';
-    % includefile = '*';
-    % excludefile = '';
-    % return
-end
-
-
-%% Case 4:
-%
-% * Examples: >> ll files\*         where files is a folder.
-%             >> ll lib\files\*     where lib\files is a folder.
-%
-% * Not Allowed: >> ll lib*\*
-%                 >> ll tmp\lib*\*
-%                 >> ll tmp*\lib\*
-%
-[filepath, name, ext] = fileparts(x);
-if ~isempty(filepath) && strcmp(name, '*') && isempty(ext)
-    if ~isempty(strfind(filepath, '*'))    %#ok<STREMP>
-        error('Not supported.');
-    else
-        rootdir     = filepath;
-        includedir  = '*';
-        excludedir  = '';
-        includefile = '*';
-        excludefile = '';
-        return
+%% Only keep these columns.
+T = T(:, {'filename', 'date', 'bytes'});
+    
+    
+%% Set T.ext.
+if size(T,1) >= 10000
+    T.ext = repmat(categorical({''}), size(T,1), 1);
+else
+    E = cell(size(T.filename));
+    for n = 1:length(E)
+        [~, ~, ext] = fileparts(char(T.filename(n)));
+        if ~isempty(ext)
+            if strcmp(ext(1), '.')
+                ext(1) = '';
+            end
+        end
+        E{n} = ext;
     end
+    T.ext = categorical(E);
 end
 
 
-%% Case 5:
-%
-% * Examples: >> ll lib\foo.m
-%             >> ll lib\foo*.m
-%             >> ll tmp\lib\foo.m
-%             >> ll tmp\lib\foo*.m
-%
-% * Not Allowed: >> ll lib*\foo.m
-%                 >> ll tmp\lib*\foo.m
-%                 >> ll tmp*\lib\foo.m
-%
-[filepath, name, ext] = fileparts(x);
-if ~isempty(filepath)
-    if ~isempty(strfind(filepath, '*'))    %#ok<STREMP>
-        error('Not supported.');
-    else
-        rootdir     = filepath;
-        includedir  = '*';
-        excludedir  = '';
-        includefile = [name, ext];
-        excludefile = '';
+%% Set T.attribute
+if size(T,1) >= 10000
+    T.attribute = repmat(categorical({''}), size(T,1), 1);
+else
+    A = repmat({''}, size(T.filename));
+    for n = 1:length(A)
+        [~, s] = fileattrib(char(T.filename(n)));
+        if s.archive == 1
+            if (s.UserWrite == 1) && (s.hidden == 0)
+                A{n} = 'A';
+            elseif (s.UserWrite == 0) && (s.hidden == 0)
+                A{n} = 'RA';
+            elseif (s.UserWrite == 1) && (s.hidden == 1)
+                A{n} = 'HA';
+            elseif (s.UserWrite == 0) && (s.hidden == 1)
+                A{n} = 'RHA';
+            else
+                A{n} = '';
+            end
+        else
+            if (s.UserWrite == 0) && (s.hidden == 0)
+                A{n} = 'R';
+            elseif (s.UserWrite == 1) && (s.hidden == 1)
+                A{n} = 'H';
+            elseif (s.UserWrite == 0) && (s.hidden == 1)
+                A{n} = 'RH';
+            end
+        end
     end
-    return
+    T.attribute = categorical(A, {'A', 'RA', 'HA', 'RHA', 'R', 'H', 'RH'}, ...
+        'Protected', 1);
 end
 
 
-%% Should not reach here.
-error('Invalid input argument');
-
-
 end
-
 
