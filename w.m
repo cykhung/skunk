@@ -6,6 +6,9 @@ end
 if ischar(filenames)
     filenames = {filenames};
 end
+if iscategorical(filenames)
+    filenames = cellstr(filenames);
+end
 
 
 for n = 1:numel(filenames)
