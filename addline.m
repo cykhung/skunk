@@ -1,5 +1,5 @@
-function addline(varargin)
+function addline
 
-annotates('line', varargin{:})
+annotates('line', 'r')
 
 end

@@ -1,5 +1,5 @@
-function addbox(varargin)
+function addbox
 
-annotates('box', varargin{:})
+annotates('box')
 
 end
