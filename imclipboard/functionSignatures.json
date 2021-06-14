@@ -1,0 +1,9 @@
+{
+"imclipboard":
+{
+  "inputs":
+  [
+    {"name":"filename", "kind":"required", "type":[["filepath"], ["folderpath"], "char", ["choices={'copy', 'paste'}"]], "multiplicity":"append"}
+  ]
+}
+}
